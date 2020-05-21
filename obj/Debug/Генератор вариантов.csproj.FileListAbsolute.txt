@@ -9,3 +9,14 @@ C:\Учёбка и не учёбка\Учеба\Теория вероятнос�
 C:\Учёбка и не учёбка\Учеба\Теория вероятности\Генератор вариантов\obj\Debug\Генератор вариантов.exe
 C:\Учёбка и не учёбка\Учеба\Теория вероятности\Генератор вариантов\obj\Debug\Генератор вариантов.pdb
 C:\Учёбка и не учёбка\Учеба\Теория вероятности\Генератор вариантов\obj\Debug\Генератор вариантов.csproj.CoreCompileInputs.cache
+C:\Учёбка и не учёбка\Проги\Git Repositories\Probability-theory-project\bin\Debug\Генератор вариантов.exe.config
+C:\Учёбка и не учёбка\Проги\Git Repositories\Probability-theory-project\bin\Debug\Генератор вариантов.exe
+C:\Учёбка и не учёбка\Проги\Git Repositories\Probability-theory-project\bin\Debug\Генератор вариантов.pdb
+C:\Учёбка и не учёбка\Проги\Git Repositories\Probability-theory-project\obj\Debug\Генератор вариантов.csprojAssemblyReference.cache
+C:\Учёбка и не учёбка\Проги\Git Repositories\Probability-theory-project\obj\Debug\Генератор_вариантов.Form1.resources
+C:\Учёбка и не учёбка\Проги\Git Repositories\Probability-theory-project\obj\Debug\Генератор_вариантов.Form2.resources
+C:\Учёбка и не учёбка\Проги\Git Repositories\Probability-theory-project\obj\Debug\Генератор_вариантов.Properties.Resources.resources
+C:\Учёбка и не учёбка\Проги\Git Repositories\Probability-theory-project\obj\Debug\Генератор вариантов.csproj.GenerateResource.cache
+C:\Учёбка и не учёбка\Проги\Git Repositories\Probability-theory-project\obj\Debug\Генератор вариантов.csproj.CoreCompileInputs.cache
+C:\Учёбка и не учёбка\Проги\Git Repositories\Probability-theory-project\obj\Debug\Генератор вариантов.exe
+C:\Учёбка и не учёбка\Проги\Git Repositories\Probability-theory-project\obj\Debug\Генератор вариантов.pdb
