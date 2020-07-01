@@ -1,23 +1,46 @@
 ﻿using Microsoft.Office.Interop.Word;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media.Animation;
+using Numerics;
 
 namespace Генератор_вариантов
 {
     //Класс, хранящий текст заданий варианта и ответы к заданиям
     class TestVersion
     {
-        private int _versionNum; //Номер варианта
-        string[] _tasks; //Тексты заданий
-        List<double>[] _solutions;
-        string[] _stringSolutions;
-        Chart _elelventhTaskChart;
+        private decimal _versionNum; //Номер варианта
+        private string[] _tasks; //Тексты заданий
+        private List<double>[] _solutions;
+        private string[] _stringSolutions;
+        private Chart _elelventhTaskChart;
+        private string _versionText;
+        private string _answersText;
 
-        public TestVersion(int numOfVersion)
+
+        public string VersionText
+        {
+            get 
+            {
+                return _versionText;
+            }
+        }
+
+        public string AnswersText
+        {
+            get { return _answersText; }
+        }
+
+        public decimal VersionNum
+        {
+            get { return _versionNum; }
+        }
+
+        public TestVersion(decimal numOfVersion)
         {
             _versionNum = numOfVersion;
             _tasks = new string[18];
@@ -47,6 +70,24 @@ namespace Генератор_вариантов
             generateSixsteenthTask();
             generateSeventeenthTask();
             generateEighteenthTask();
+
+            //Собираем весь текст в одну переменную
+            _versionText = string.Empty;
+            for (int i = 0; i < 18; ++i)
+                _versionText += _tasks[i];
+
+            //Собираем ответы в одну переменную
+            _answersText = string.Empty;
+            for (int i = 0; i < 18; ++i)
+            {
+                if (_stringSolutions[i] == null)
+                    foreach (double answer in _solutions.ElementAt(i))
+                    {
+                        _answersText += (i + 1) + ". " + answer + "\n\n";
+                    }
+                else
+                    _answersText += (i + 1) + ". " + _stringSolutions.ElementAt(i) + "\n\n";
+            }
         }
 
 
@@ -63,7 +104,7 @@ namespace Генератор_вариантов
             _tasks[0] += int_params[0] + " подшипников, в которою попали ";
             int_params[1] = rand_generator.Next(5, 5 + int_params[0] / 3);
             _tasks[0] += int_params[1] + " бракованных. Определить вероятность того, что из ";
-            int_params[2] = rand_generator.Next(2, 2 + int_params[1] / 3);
+            int_params[2] = rand_generator.Next(2, 4 + int_params[1] / 3);
             _tasks[0] += int_params[2] + " взятых наугад подшипников окажется: а)по крайней мере один годный, б) ";
             int_params[3] += rand_generator.Next(1, int_params[2] - 2);
             _tasks[0] += int_params[3] + " годных и " + (int_params[2] - int_params[3]) + " бракованных.";
@@ -316,17 +357,19 @@ namespace Генератор_вариантов
 
         private void generateSeventeenthTask()
         {
-            int[] int_params = new int[4];
-            double[] double_params = new double[6];
+            int[] int_params = new int[2];
+            double double_param;
             Random rand_generator = new Random();
             //Семнадцатое задание
             _tasks[16] = "\n\n" + _versionNum + ".17. Вероятность появления события в каждом из ";
             int_params[0] = rand_generator.Next(4, 41) * 25;
             _tasks[16] += int_params[0] + " независимых испытаний постоянна и равна Р = ";
-            double_params[0] = rand_generator.Next(7, 9) * 0.1;
-            _tasks[16] += double_params[0] + ". Найти вероятность того, что событие появится не более ";
+            double_param = rand_generator.Next(7, 9) * 0.1;
+            _tasks[16] += double_param + ". Найти вероятность того, что событие появится не более ";
             int_params[1] = rand_generator.Next(int_params[0] / 2, 3 * int_params[0] / 4);
             _tasks[16] += int_params[1] + " раз.";
+
+            _solutions[16] = sevententhSolution(int_params[0], int_params[1], double_param);
         }
 
         private void generateEighteenthTask()
@@ -365,10 +408,12 @@ namespace Генератор_вариантов
             _tasks[17] += double_params[0] + "| " + double_params[1] + " | " + double_params[2] + "\n1      |  "
                 + double_params[3] + "| " + double_params[4] + " | " + double_params[5] + "\nНайти М(ξ), М(η), М(ξη), D(ξ), D(η), " +
                 "D(ξη).";
+
+            _solutions[17] = eighteenthSolution(double_params);
         }
 
 
-        //----------------------------------Решения заданий----------------------------------------------
+//----------------------------------Решения заданий----------------------------------------------
         private List<double> firstSolution(int bearingNum, int defBearings, int takenBearings, int fitTakenBearings)
         {
             double firstAnswer = 1 - C(defBearings, takenBearings) / C(bearingNum, takenBearings);
@@ -526,7 +571,7 @@ namespace Генератор_вариантов
             result += ", при " + lowLimit.ToString() + " < x ≤ " + highLimit.ToString() +
             "\nF(x) = 1, при х > " + highLimit.ToString();
 
-            _solutions[13] = fourteenthSolution(power, coef);
+            _solutions[13] = fourteenthSolution(power, coef, lowLimit, highLimit);
 
             return result;
         }
@@ -566,17 +611,69 @@ namespace Генератор_вариантов
             return resultList;
         }
 
+        private List<double> sevententhSolution(int totalExp, int requiredExp, double prob)
+        {
+            double result = Phi((requiredExp - totalExp * prob) / Math.Sqrt(totalExp * prob * (1 - prob))) -
+                Phi((1 - totalExp * prob) / Math.Sqrt(totalExp * prob * (1 - prob)));
+
+            List<double> resultList = new List<double>();
+            resultList.Add(result);
+
+            return resultList;
+        }
+
+        private List<double> eighteenthSolution(double[] tableValues)
+        {
+            //М(ξ)
+            double expValE = 0;
+            for (int i = 3; i < tableValues.Length; ++i)
+                expValE += tableValues[i];
+            List<double> resultList = new List<double>();
+            resultList.Add(expValE);
+
+            //M(η)
+            double mathExpN = -1 * (tableValues[0] + tableValues[3]) + tableValues[2] + tableValues[5];
+            resultList.Add(mathExpN);
+
+            //M(ξη)
+            double mathExpEN = -1 * tableValues[3] + tableValues[5];
+            resultList.Add(mathExpEN);
+
+            //D(ξ)
+            double result = 0;
+            for (int i = 3; i < tableValues.Length; ++i)
+                result += tableValues[i];
+            result -= Math.Pow(expValE, 2);
+            resultList.Add(result);
+
+            //D(η)
+            result = tableValues[0] + tableValues[3] + tableValues[2] + tableValues[5] - Math.Pow(mathExpN, 2);
+            resultList.Add(result);
+
+            //D(ξη)
+            result = tableValues[3] + tableValues[5] - Math.Pow(mathExpEN, 2);
+            resultList.Add(result);
+
+            return resultList;
+        }
+
 //-------------------------------Вспомогательные методы--------------------------------------------
-//Количество сочетаний
+        //Количество сочетаний
         private int C(int n, int m)
         {
-            return fact(n) / (fact(m) * fact(n - m));
+            if ((fact(m) * fact(n - m)) == 0)
+            {
+                int fact1 = (int)fact(m);
+                int fact2 = (int)fact(n-m);
+                int someCode = 15;
+            }
+            return (int)(fact(n) / (fact(m) * fact(n - m)));
         }
 
         //Факториал
-        private int fact(int num)
+        private BigRational fact(int num)
         {
-            if (num == 0)
+            if (num == 0 || num == 1)
                 return 1;
             return num * fact(num - 1);
         }
@@ -646,12 +743,12 @@ namespace Генератор_вариантов
         {
             double evenSum = 0, oddSum = 0;
             for (int i = 2; i < x.Count - 1; i += 2)//Считаем сумму значений подынтегральной функции в узлах с четными индексами
-                evenSum += f(x[i]);
+                evenSum += f(x.ElementAt(i));
 
             for (int i = 1; i < x.Count - 1; i += 2)//С нечетными индексами
-                oddSum += f(x[i]);
+                oddSum += f(x.ElementAt(i));
 
-            return (h / 3) * (f(x[0]) + f() + 2 * evenSum + 4 * oddSum);
+            return (h / 3) * (f(x.ElementAt(0)) + f(x.ElementAt(x.Count - 1)) + 2 * evenSum + 4 * oddSum);
         }
     }
 }

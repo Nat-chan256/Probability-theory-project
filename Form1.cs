@@ -1,17 +1,24 @@
-﻿using System;
+﻿using Microsoft.Office.Interop.Word;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml.Serialization;
 
+using Font = System.Drawing.Font;
+using Point = System.Drawing.Point;
+
 namespace Генератор_вариантов
 {
     using Word = Microsoft.Office.Interop.Word;
+
+    enum FileContent { Tasks, Answers }; //Варианты содержимого файла
 
     public partial class Form1 : Form
     {
@@ -19,12 +26,14 @@ namespace Генератор_вариантов
         TextBox way_for_versions_;
         TextBox way_for_answers_;
         NumericUpDown num_of_versions_;
+        private delegate void _workWithWordDelegate(string path, string text, decimal versionNum, FileContent fileContnet);
 
         public Form1()
         {
             InitializeComponent();
             source_version_ = new Form2(this);
         }
+
 
         private void b_show_Click(object sender, EventArgs e)
         {
@@ -143,7 +152,8 @@ namespace Генератор_вариантов
             text_box.ForeColor = Color.Black;
         }
 
-        //Кнопки
+
+//------------------------------------------------------Кнопки------------------------------------------------------------------
         private void browse1_Click(object sender, EventArgs e)
         {
             FolderBrowserDialog folder_browser_dialog = new FolderBrowserDialog();
@@ -164,27 +174,44 @@ namespace Генератор_вариантов
             }
         }
 
+        //Большущая кнопка "Сгенерировать"
         private void b_gen_Click(object sender, EventArgs e)
         {
+            if (!PathsAreCorrect()) return; //Проверка введенных путей
 
-            //Создаем новый вордовский документ
-            //Word.Application app = new Word.Application();
-            //app.Visible = false;
-            //Word.Document doc = app.Documents.Add();
-            //doc.Paragraphs[1].Range.Text = this.text_box.Text;
+            //Генерируем тексты вариантов и ответы к ним
+            List<TestVersion> testVersions = GenerateTestVersions(num_of_versions_.Value);
 
-            //for (int i = 1; i < doc.Paragraphs.Count; ++i)
-            //{
-            //    doc.Paragraphs[i].Range.Font.Name = "Times New Roman";
-            //    doc.Paragraphs[i].Range.Font.Size = 14;
-            //}
+            //Сохраняем тексты вариантов
+            foreach (TestVersion version in testVersions)
+            {
+                _workWithWordDelegate d = new _workWithWordDelegate(SaveToWordFile);
+                d.BeginInvoke(way_for_versions_.Text, version.VersionText, version.VersionNum, FileContent.Tasks, null, null);
+            }
 
-            //doc.SaveAs2(save_file_dialog.FileName);
-            //doc.Close();
-            //app.Quit();
+            //Сохраняем ответы
+            foreach (TestVersion version in testVersions)
+            {
+                _workWithWordDelegate d = new _workWithWordDelegate(SaveToWordFile);
+                d.BeginInvoke(way_for_versions_.Text, version.AnswersText, version.VersionNum, FileContent.Answers,null, null);
+            }
+
+            MessageBox.Show("Файлы успешно созданы");
         }
 
-        private TestVersion GenerateTestVersion(int num_of_version)
+
+        private List<TestVersion> GenerateTestVersions(decimal numOfVersions)
+        {
+            List<TestVersion> resultList = new List<TestVersion>();
+            for (decimal i = 1; i <= numOfVersions; ++i)
+            {
+                TestVersion version = GenerateTestVersion(i);
+                resultList.Add(version);
+            }
+            return resultList;
+        }
+
+        private TestVersion GenerateTestVersion(decimal num_of_version)
         {
             //Создаем экземпляр класа TestVersion, который будет хранить текст сгенерированных заданий и решения к ним
             TestVersion testVersion = new TestVersion(num_of_version);
@@ -193,5 +220,43 @@ namespace Генератор_вариантов
             return testVersion;
         }
 
+        private void SaveToWordFile(string path, string text, decimal numOfVersion, FileContent fileContent)
+        {
+            //Создаем новый вордовский документ
+            Word.Application app = new Word.Application();
+            app.Visible = false;
+            Word.Document doc = app.Documents.Add();
+            doc.Paragraphs[1].Range.Text = text;
+
+            for (int i = 1; i <= doc.Paragraphs.Count; ++i)
+            {
+                doc.Paragraphs[i].Range.Font.Name = "Times New Roman";
+                doc.Paragraphs[i].Range.Font.Size = 14;
+            }
+
+            if (fileContent == FileContent.Answers)
+                doc.SaveAs2(path + @"\Вариант " + numOfVersion + " ответы");
+            else
+                doc.SaveAs2(path + @"\Вариант " + numOfVersion);
+            doc.Close();
+            app.Quit();
+        }
+
+        //Проверка, существуют ли введенные пути
+        private bool PathsAreCorrect()
+        {
+            if (!Directory.Exists(way_for_versions_.Text))
+            {
+                MessageBox.Show("Путь для вариантов не найден.");
+                return false;
+            }
+
+            if (!Directory.Exists(way_for_answers_.Text))
+            {
+                MessageBox.Show("Путь для ответов не найден.");
+                return false;
+            }
+            return true;
+        }
     }
 }
