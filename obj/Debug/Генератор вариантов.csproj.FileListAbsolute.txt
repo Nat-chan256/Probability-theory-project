@@ -20,3 +20,6 @@ C:\Учёбка и не учёбка\Проги\Git Repositories\Probability-the
 C:\Учёбка и не учёбка\Проги\Git Repositories\Probability-theory-project\obj\Debug\Генератор вариантов.csproj.CoreCompileInputs.cache
 C:\Учёбка и не учёбка\Проги\Git Repositories\Probability-theory-project\obj\Debug\Генератор вариантов.exe
 C:\Учёбка и не учёбка\Проги\Git Repositories\Probability-theory-project\obj\Debug\Генератор вариантов.pdb
+C:\Учёбка и не учёбка\Проги\Git Repositories\Probability-theory-project\bin\Debug\WaitWnd.dll
+C:\Учёбка и не учёбка\Проги\Git Repositories\Probability-theory-project\bin\Debug\WaitWnd.pdb
+C:\Учёбка и не учёбка\Проги\Git Repositories\Probability-theory-project\obj\Debug\Генератор вариантов.csproj.CopyComplete

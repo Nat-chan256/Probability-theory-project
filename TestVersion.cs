@@ -17,7 +17,6 @@ namespace Генератор_вариантов
         private string[] _tasks; //Тексты заданий
         private List<double>[] _solutions;
         private string[] _stringSolutions;
-        private Chart _elelventhTaskChart;
         private string _versionText;
         private string _answersText;
 
@@ -48,7 +47,7 @@ namespace Генератор_вариантов
             _stringSolutions = new string[18];
         }
 
-        //Метод, генерирующий тексты заданий
+        //Метод, генерирующий тексты заданий и ответы к ним
         public void generateTasks()
         {
             //Генерируем каждое задание в отдельном методе
@@ -81,9 +80,15 @@ namespace Генератор_вариантов
             for (int i = 0; i < 18; ++i)
             {
                 if (_stringSolutions[i] == null)
-                    foreach (double answer in _solutions.ElementAt(i))
+                    for (int j = 0; j < _solutions.ElementAt(i).Count; ++j)
                     {
-                        _answersText += (i + 1) + ". " + answer + "\n\n";
+                        if (_solutions.ElementAt(i).Count == 1)
+                            _answersText += (i + 1) + ". " + Math.Round(_solutions.ElementAt(i).ElementAt(j), 4) + "\n\n";
+                        else //Делим ответ на подпункты, если это необходимо
+                        {
+                            _answersText += (i + 1) + "." + (char)(97 + j) + ". " + Math.Round(_solutions.ElementAt(i).ElementAt(j), 4)
+                                + "\n\n";
+                        }
                     }
                 else
                     _answersText += (i + 1) + ". " + _stringSolutions.ElementAt(i) + "\n\n";
@@ -91,7 +96,7 @@ namespace Генератор_вариантов
         }
 
 
-        //----------------------------------Генерация заданий----------------------------------------------
+//----------------------------------Генерация заданий----------------------------------------------
         private void generateFirstTask()
         {
             int[] int_params = new int[4];
@@ -104,10 +109,13 @@ namespace Генератор_вариантов
             _tasks[0] += int_params[0] + " подшипников, в которою попали ";
             int_params[1] = rand_generator.Next(5, 5 + int_params[0] / 3);
             _tasks[0] += int_params[1] + " бракованных. Определить вероятность того, что из ";
-            int_params[2] = rand_generator.Next(2, 4 + int_params[1] / 3);
-            _tasks[0] += int_params[2] + " взятых наугад подшипников окажется: а)по крайней мере один годный, б) ";
+            int_params[2] = rand_generator.Next(4, 4 + int_params[1] / 3);
+            _tasks[0] += int_params[2] + " взятых наугад подшипников окажется: а) по крайней мере один годный, б) ";
             int_params[3] += rand_generator.Next(1, int_params[2] - 2);
-            _tasks[0] += int_params[3] + " годных и " + (int_params[2] - int_params[3]) + " бракованных.";
+            _tasks[0] += int_params[3] + " годны";   
+                if (int_params[3] % 10 == 1) _tasks[0] += "й ";
+            else _tasks[0] += "х ";
+            _tasks[0] += "и " + (int_params[2] - int_params[3]) + " бракованных.";
 
             _solutions[0] = firstSolution(int_params[0], int_params[1], int_params[2], int_params[3]);
         }
@@ -123,9 +131,15 @@ namespace Генератор_вариантов
             int_params[1] = rand_generator.Next(4, 24);
             _tasks[1] += int_params[1] + " черных шаров. Вынимают сразу ";
             int_params[2] = rand_generator.Next(3, 8);
-            _tasks[1] += int_params[2] + " шара. Найти вероятность того, что среди них окажется ровно ";
-            int_params[3] = rand_generator.Next(1, 3);
-            _tasks[1] += int_params[3] + " белых шара.";
+            _tasks[1] += int_params[2]; 
+            if (int_params[2] < 5) _tasks[1] += " шара. ";
+            else _tasks[1] += " шаров. ";
+            _tasks[1] += "Найти вероятность того, что среди них окажется ровно ";
+            int_params[3] = rand_generator.Next(1, 4);
+            _tasks[1] += int_params[3];
+
+            if (int_params[3] % 10 == 1) _tasks[1] += " белый шар.";
+            else _tasks[1] += " белых шара";
 
             _solutions[1] = secondSolution(int_params[0], int_params[1], int_params[2], int_params[3]);
         }
@@ -139,7 +153,12 @@ namespace Генератор_вариантов
             int_params[0] = (rand_generator.Next(0, 2) == 0) ? 36 : 52;
             _tasks[2] += int_params[0] + " карт. Наугад вынимают ";
             int_params[1] = rand_generator.Next(1, 11);
-            _tasks[2] += int_params[1] + "карт. Найти вероятность того, что среди них окажется хотя бы один туз.";
+            _tasks[2] += int_params[1];
+
+            if (int_params[1] < 5) _tasks[2] += " карты.";
+            else _tasks[2] += " карт.";
+
+            _tasks[2] += " Найти вероятность того, что среди них окажется хотя бы один туз.";
 
             _solutions[2] = thirdSolution(int_params[0], int_params[1]);
         }
@@ -159,19 +178,22 @@ namespace Генератор_вариантов
         private void generateFifthTask()
         {
             int int_param;
-            double[] double_params = new double[6];
+            double[] double_params = new double[7];
             Random rand_generator = new Random();
             //Пятое задание
             _tasks[4] = "\n\n" + _versionNum + ".5.  Узел содержит ";
             int_param = rand_generator.Next(2, 7);
-            _tasks[4] += int_param + "  независимо работающих деталей. Вероятности отказа деталей соответственно равны p1 = ";
+            _tasks[4] += int_param + "  независимо ";
+            if (int_param < 5) _tasks[4] += "работающие детали. ";
+            else _tasks[4] += "работающих деталей. ";
+            _tasks[4] += "Вероятности отказа деталей соответственно равны p1 = ";
             double_params[0] = rand_generator.Next(1, 11) * 0.01;
             _tasks[4] += double_params[0] + ", p";
-            for (int i = 1; i <= int_param; ++i)
+            for (int i = 1; i < int_param; ++i)
             {
                 double_params[i] = rand_generator.Next(1, 11) * 0.01;
                 _tasks[4] += (i + 1) + " = " + double_params[i];
-                if (i < int_param) _tasks[4] += ", p";
+                if (i < int_param - 1) _tasks[4] += ", p";
             }
             _tasks[4] += ". Найти вероятность отказа узла, если для этого достаточно, чтобы отказала хотя бы одна деталь.";
 
@@ -237,14 +259,14 @@ namespace Генератор_вариантов
             int_params[0] = rand_generator.Next(1, 6) * 10;
             _tasks[8] += int_params[0] + "% больных с заболеванием А, ";
             int_params[1] = rand_generator.Next(1, 5) * 10;
-            _tasks[8] += int_params[0] + "% с заболеванием В, ";
+            _tasks[8] += int_params[1] + "% с заболеванием В, ";
             int_params[2] = 100 - int_params[0] - int_params[1];
             _tasks[8] += int_params[2] + "% с заболеванием С.  Вероятность полного выздоровления для каждого заболевания соответственно " +
                 "равны ";
             double_params[0] = rand_generator.Next(5, 9) * 0.1;
             double_params[1] = rand_generator.Next(5, 9) * 0.1;
             double_params[2] = rand_generator.Next(5, 9) * 0.1;
-            _tasks[8] += double_params[0] + "; " + double_params[1] + "; " + +double_params[2] + "Больной был выписан из больницы " +
+            _tasks[8] += double_params[0] + "; " + double_params[1] + "; " + +double_params[2] + ". Больной был выписан из больницы " +
                 "здоровым. Найти вероятность того, что он страдал заболеванием А. ";
 
             _solutions[8] = ninthSolution(int_params[0], int_params[1], int_params[2], double_params[0], double_params[1],
@@ -261,7 +283,11 @@ namespace Генератор_вариантов
             int_params[0] = rand_generator.Next(4, 10);
             _tasks[9] += int_params[0] + " детей. Найти вероятность того, что среди них ";
             int_params[1] = rand_generator.Next(1, int_params[0]);
-            _tasks[9] += int_params[1] + " девочки. Вероятность рождения девочки равна ";
+            _tasks[9] += int_params[1]; 
+            if (int_params[1] == 1) _tasks[9] += " девочка. ";
+            else if (int_params[1] > 1 && int_params[1] < 5) _tasks[9] += " девочки. ";
+            else _tasks[9] += " девочек. ";
+            _tasks[9] += "Вероятность рождения девочки равна ";
             double_param = rand_generator.Next(20, 60) * 0.01;
             _tasks[9] += double_param + ".";
 
@@ -305,12 +331,8 @@ namespace Генератор_вариантов
             _tasks[12] = "\n\n" + _versionNum + ".13. Задана плотность распределения непрерывной случайной величины:"
                     + "\n φ(х) = Ax^";
             int_params[0] = rand_generator.Next(2, 7);
-            _tasks[12] += int_params[0] + ", ∀x ∈ (";
-            int_params[1] = rand_generator.Next(0, 4);
-            int_params[2] = rand_generator.Next(int_params[1], int_params[1] + 4);
-            _tasks[12] += int_params[1] + ";" + int_params[2] + "]\n φ(х) = 0, ∀x ∉ (" + int_params[1] +
-                ";" + int_params[2] + "]. \nНайти А и функцию распределения F(x).";
-            _stringSolutions[12] = thirteenthSolution(int_params[0], int_params[1], int_params[2]);
+            _tasks[12] += int_params[0] + ", ∀x ∈ (0;1]\n φ(х) = 0, ∀x ∉ (0;1]. \nНайти А и функцию распределения F(x).";
+            _stringSolutions[12] = thirteenthSolution(int_params[0]);
         }
 
         private void generateFourteenthTask()
@@ -332,7 +354,9 @@ namespace Генератор_вариантов
             int_params[0] = rand_generator.Next(200, 3200);
             int_params[0] -= int_params[0] % 100;
             int_params[1] = rand_generator.Next(100, 100 + (int)(0.4 * int_params[0]));
-            _tasks[14] += int_params[0] + " опытах произойдет " + int_params[1] + " раз.";
+            _tasks[14] += int_params[0] + " опытах произойдет " + int_params[1];
+            if (int_params[1] % 10 > 1 && int_params[1] % 10 < 5) _tasks[14] += " раза.";
+            else _tasks[14] += " раз.";
 
             _solutions[14] = fifteenthSolution(double_param, int_params[0], int_params[1]);
         }
@@ -367,7 +391,9 @@ namespace Генератор_вариантов
             double_param = rand_generator.Next(7, 9) * 0.1;
             _tasks[16] += double_param + ". Найти вероятность того, что событие появится не более ";
             int_params[1] = rand_generator.Next(int_params[0] / 2, 3 * int_params[0] / 4);
-            _tasks[16] += int_params[1] + " раз.";
+            if (int_params[1] % 10 == 1)
+                _tasks[16] += int_params[1] + " раза.";
+            else _tasks[16] += int_params[1] + " раз.";
 
             _solutions[16] = sevententhSolution(int_params[0], int_params[1], double_param);
         }
@@ -401,9 +427,9 @@ namespace Генератор_вариантов
             double_params[4] = rand_generator.Next(zero_generated, max_value) * 0.1;
             if (double_params[4] == 0) zero_generated = 1;
 
-            max_value = 10 - (int)double_params[0] * 10 - (int)double_params[1] * 10 - (int)double_params[2] * 10
-                - (int)double_params[3] * 10 - (int)double_params[4] * 10 + 1;
-            double_params[5] = rand_generator.Next(zero_generated, max_value) * 0.1;
+            double_params[5] = 1;
+            for (int i = 0; i < 5; ++i)
+                double_params[5] -= double_params[i];
 
             _tasks[17] += double_params[0] + "| " + double_params[1] + " | " + double_params[2] + "\n1      |  "
                 + double_params[3] + "| " + double_params[4] + " | " + double_params[5] + "\nНайти М(ξ), М(η), М(ξη), D(ξ), D(η), " +
@@ -417,8 +443,8 @@ namespace Генератор_вариантов
         private List<double> firstSolution(int bearingNum, int defBearings, int takenBearings, int fitTakenBearings)
         {
             double firstAnswer = 1 - C(defBearings, takenBearings) / C(bearingNum, takenBearings);
-            double secondAnswer = (C(bearingNum - defBearings, fitTakenBearings) * C(defBearings, takenBearings - fitTakenBearings)) /
-                C(bearingNum, takenBearings);
+            double secondAnswer = (C(bearingNum - defBearings, fitTakenBearings) * 
+                C(defBearings, takenBearings - fitTakenBearings)) / C(bearingNum, takenBearings);
 
             List<double> resultList = new List<double>();
             resultList.Add(firstAnswer);
@@ -438,7 +464,7 @@ namespace Генератор_вариантов
 
         private List<double> thirdSolution(int numOfCards, int takenCards)
         {
-            double result = 1 - C(numOfCards - 4, 4) / C(numOfCards, 4);
+            double result = 1 - C(numOfCards - 4, takenCards) / C(numOfCards, takenCards);
             List<double> resultList = new List<double>();
             resultList.Add(result);
             return resultList;
@@ -476,7 +502,7 @@ namespace Генератор_вариантов
 
         private List<double> seventhSolution(double firstMachineProb, double secondMachineProb)
         {
-            double result = (1 / 3) * firstMachineProb + (2 / 3) * secondMachineProb;
+            double result = (1.0 / 3.0) * firstMachineProb + (2.0 / 3.0) * secondMachineProb;
             List<double> resultList = new List<double>();
             resultList.Add(result);
             return resultList;
@@ -493,7 +519,7 @@ namespace Генератор_вариантов
         private List<double> ninthSolution(int firstDiseasePercent, int secondDiseasePercent, int thirdDiseasePercent,
             double firstDiseaseProb, double secondDiseaseProb, double thirdDiseaseProb)
         {
-            double result = (firstDiseasePercent / 100 * firstDiseaseProb) / (firstDiseaseProb * firstDiseasePercent +
+            double result = (firstDiseasePercent / 100.0 * firstDiseaseProb) / (firstDiseaseProb * firstDiseasePercent +
                 secondDiseaseProb * secondDiseasePercent + thirdDiseaseProb * thirdDiseasePercent);
             List<double> resultList = new List<double>();
             resultList.Add(result);
@@ -516,7 +542,7 @@ namespace Генератор_вариантов
                 "\nF(x < 0,3) = " + (prob1 + prob2).ToString() +
                 "\nF(x < 0,4) = " + (prob1 + prob2 + prob3).ToString() +
                 "\nF(x < 0,5) = " + (prob1 + prob2 + prob3 + prob4).ToString() +
-                "\nF(x >= 0,5) = " + (prob1 + prob2 + prob3 + prob4 + prob5).ToString();
+                "\nF(x ≥ 0,5) = " + (prob1 + prob2 + prob3 + prob4 + prob5).ToString();
 
             List<double> xList = new List<double>();
             for (double i = 0.1; i <= 0.5; i += 0.1)
@@ -527,8 +553,6 @@ namespace Генератор_вариантов
             yList.Add(prob3);
             yList.Add(prob4);
             yList.Add(prob5);
-
-            setChart(ref _elelventhTaskChart, xList, yList); //Риусем график
 
             return result;
         }
@@ -546,32 +570,16 @@ namespace Генератор_вариантов
             return resultList;
         }
 
-        private string thirteenthSolution(int power, int lowLimit, int highLimit)
+        private string thirteenthSolution(int power)
         {
             //Коэффициент А
-            double coef = (power + 1) / (Math.Pow(highLimit, power + 1) - Math.Pow(lowLimit, power + 1));
+            double coef = power + 1;
 
-            string result = "A = " + coef.ToString() + "\nF(x) = 0, при х ≤ " + lowLimit.ToString() +
-                "\nF(x) = ";
-            if (lowLimit == 0)
-            {
-                if (coef / (power + 1) == 1)
-                    result += "x^" + (power + 1).ToString();
-                else
-                    result += (coef / (power + 1)).ToString() + "x^" + (power + 1).ToString();
-            }
-            else
-            {
-                if (coef / (power + 1) == 1)
-                    result += "x^" + (power + 1).ToString() + " - " + Math.Pow(lowLimit, power + 1).ToString();
-                else
-                    result += (coef / (power + 1)).ToString() + "x^" + (power + 1).ToString() + " - " +
-                        ((coef / (power + 1)) * Math.Pow(lowLimit, power + 1)).ToString();
-            }
-            result += ", при " + lowLimit.ToString() + " < x ≤ " + highLimit.ToString() +
-            "\nF(x) = 1, при х > " + highLimit.ToString();
+            string result = "A = " + coef.ToString() + "\nF(x) = 0, при х ≤ 0" +
+                "\nF(x) = x ^ " + (power + 1).ToString() + ", при 0 < x ≤ 1" +
+            "\nF(x) = 1, при х > 1";
 
-            _solutions[13] = fourteenthSolution(power, coef, lowLimit, highLimit);
+            _solutions[13] = fourteenthSolution(power, coef, 0, 1);
 
             return result;
         }
@@ -659,23 +667,25 @@ namespace Генератор_вариантов
 
 //-------------------------------Вспомогательные методы--------------------------------------------
         //Количество сочетаний
-        private int C(int n, int m)
+        private double C(int n, int m)
         {
-            if ((fact(m) * fact(n - m)) == 0)
+            int dividend = 1, divider = 1;
+            if (n - m > m)
             {
-                int fact1 = (int)fact(m);
-                int fact2 = (int)fact(n-m);
-                int someCode = 15;
+                for (int i = n - m + 1; i <= n; ++i)
+                    dividend *= i;
+                for (int i = 2; i <= m; ++i)
+                    divider *= i;
             }
-            return (int)(fact(n) / (fact(m) * fact(n - m)));
-        }
+            else
+            {
+                for (int i = m + 1; i <= n; ++i)
+                    dividend *= i;
+                for (int i = 2; i <= n-m; ++i)
+                    divider *= i;
+            }
 
-        //Факториал
-        private BigRational fact(int num)
-        {
-            if (num == 0 || num == 1)
-                return 1;
-            return num * fact(num - 1);
+            return dividend/divider;
         }
 
         //Настройка графика

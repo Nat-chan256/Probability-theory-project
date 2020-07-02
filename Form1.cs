@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml.Serialization;
+using WaitWnd;
 
 using Font = System.Drawing.Font;
 using Point = System.Drawing.Point;
@@ -27,11 +28,24 @@ namespace Генератор_вариантов
         TextBox way_for_answers_;
         NumericUpDown num_of_versions_;
         private delegate void _workWithWordDelegate(string path, string text, decimal versionNum, FileContent fileContnet);
+        private Word.Application _app;
+        private WaitWndFun _waitWindow;
 
         public Form1()
         {
             InitializeComponent();
             source_version_ = new Form2(this);
+
+            //Открываем ворд на фоне
+            _app = new Word.Application();
+            _app.Visible = false;
+
+            _waitWindow = new WaitWndFun();
+
+            //Настраиваем расположение окна
+            Screen screen = Screen.FromControl(this);
+            this.StartPosition = FormStartPosition.Manual;
+            this.Location = new Point(screen.WorkingArea.Width/2 - this.Width/2, screen.WorkingArea.Height/2 - this.Height);
         }
 
 
@@ -182,21 +196,27 @@ namespace Генератор_вариантов
             //Генерируем тексты вариантов и ответы к ним
             List<TestVersion> testVersions = GenerateTestVersions(num_of_versions_.Value);
 
+            //Создаем поток для отображения окна ожидания
+
+
             //Сохраняем тексты вариантов
+            _waitWindow.Show();
             foreach (TestVersion version in testVersions)
             {
                 _workWithWordDelegate d = new _workWithWordDelegate(SaveToWordFile);
-                d.BeginInvoke(way_for_versions_.Text, version.VersionText, version.VersionNum, FileContent.Tasks, null, null);
+                IAsyncResult result = d.BeginInvoke(way_for_versions_.Text, version.VersionText, version.VersionNum, FileContent.Tasks, null, null);
+                d.EndInvoke(result);
             }
-
+           
             //Сохраняем ответы
             foreach (TestVersion version in testVersions)
             {
                 _workWithWordDelegate d = new _workWithWordDelegate(SaveToWordFile);
-                d.BeginInvoke(way_for_versions_.Text, version.AnswersText, version.VersionNum, FileContent.Answers,null, null);
+                IAsyncResult result = d.BeginInvoke(way_for_versions_.Text, version.AnswersText, version.VersionNum, 
+                    FileContent.Answers, null, null);
+                d.EndInvoke(result);
             }
-
-            MessageBox.Show("Файлы успешно созданы");
+            _waitWindow.Close();
         }
 
 
@@ -223,9 +243,7 @@ namespace Генератор_вариантов
         private void SaveToWordFile(string path, string text, decimal numOfVersion, FileContent fileContent)
         {
             //Создаем новый вордовский документ
-            Word.Application app = new Word.Application();
-            app.Visible = false;
-            Word.Document doc = app.Documents.Add();
+            Word.Document doc = _app.Documents.Add();
             doc.Paragraphs[1].Range.Text = text;
 
             for (int i = 1; i <= doc.Paragraphs.Count; ++i)
@@ -239,7 +257,6 @@ namespace Генератор_вариантов
             else
                 doc.SaveAs2(path + @"\Вариант " + numOfVersion);
             doc.Close();
-            app.Quit();
         }
 
         //Проверка, существуют ли введенные пути
@@ -257,6 +274,12 @@ namespace Генератор_вариантов
                 return false;
             }
             return true;
+        }
+
+        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            //Закрываем ворд
+            _app.Quit();
         }
     }
 }
