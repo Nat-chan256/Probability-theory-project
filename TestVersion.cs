@@ -19,7 +19,7 @@ namespace Генератор_вариантов
         private string[] _stringSolutions;
         private string _versionText;
         private string _answersText;
-
+        private double[][] _binomialCoefs; 
 
         public string VersionText
         {
@@ -45,6 +45,15 @@ namespace Генератор_вариантов
             _tasks = new string[18];
             _solutions = new List<double>[18];
             _stringSolutions = new string[18];
+            _binomialCoefs = new double[100][];
+            for (int i = 0; i < 100; ++i)
+            {
+                _binomialCoefs[i] = new double[100];
+                for (int j = 0; j < 100; ++j)
+                {
+                    _binomialCoefs[i][j] = 0;
+                }
+            }
         }
 
         //Метод, генерирующий тексты заданий и ответы к ним
@@ -83,10 +92,10 @@ namespace Генератор_вариантов
                     for (int j = 0; j < _solutions.ElementAt(i).Count; ++j)
                     {
                         if (_solutions.ElementAt(i).Count == 1)
-                            _answersText += (i + 1) + ". " + Math.Round(_solutions.ElementAt(i).ElementAt(j), 4) + "\n\n";
+                            _answersText += (i + 1) + ". " + Math.Round(_solutions.ElementAt(i).ElementAt(j), 6) + "\n\n";
                         else //Делим ответ на подпункты, если это необходимо
                         {
-                            _answersText += (i + 1) + "." + (char)(97 + j) + ". " + Math.Round(_solutions.ElementAt(i).ElementAt(j), 4)
+                            _answersText += (i + 1) + "." + (char)(97 + j) + ". " + Math.Round(_solutions.ElementAt(i).ElementAt(j), 6)
                                 + "\n\n";
                         }
                     }
@@ -519,8 +528,8 @@ namespace Генератор_вариантов
         private List<double> ninthSolution(int firstDiseasePercent, int secondDiseasePercent, int thirdDiseasePercent,
             double firstDiseaseProb, double secondDiseaseProb, double thirdDiseaseProb)
         {
-            double result = (firstDiseasePercent / 100.0 * firstDiseaseProb) / (firstDiseaseProb * firstDiseasePercent +
-                secondDiseaseProb * secondDiseasePercent + thirdDiseaseProb * thirdDiseasePercent);
+            double result = (firstDiseasePercent / 100.0 * firstDiseaseProb) / (firstDiseaseProb * (firstDiseasePercent/100.0) +
+                secondDiseaseProb * (secondDiseasePercent / 100.0) + thirdDiseaseProb * (thirdDiseasePercent/100.0));
             List<double> resultList = new List<double>();
             resultList.Add(result);
             return resultList;
@@ -587,11 +596,11 @@ namespace Генератор_вариантов
         private List<double> fourteenthSolution(int power, double coef, int lowLimit, int highLimit)
         {
             //Мат.ожидание
-            double result = (coef / (power + 1)) * (Math.Pow(highLimit, power + 1) - Math.Pow(lowLimit, power + 1));
+            double result = coef / (power + 2);
             List<double> resultList = new List<double>();
             resultList.Add(result);
             //Дисперсия
-            result = (coef / (power + 2)) * (Math.Pow(highLimit, power + 2) - Math.Pow(lowLimit, power + 2)) - Math.Pow(result, 2);
+            result = coef / (power + 3) - Math.Pow(result, 2);
             resultList.Add(result);
             //Кадратичное отклонение
             result = Math.Sqrt(result);
@@ -669,23 +678,10 @@ namespace Генератор_вариантов
         //Количество сочетаний
         private double C(int n, int m)
         {
-            int dividend = 1, divider = 1;
-            if (n - m > m)
-            {
-                for (int i = n - m + 1; i <= n; ++i)
-                    dividend *= i;
-                for (int i = 2; i <= m; ++i)
-                    divider *= i;
-            }
-            else
-            {
-                for (int i = m + 1; i <= n; ++i)
-                    dividend *= i;
-                for (int i = 2; i <= n-m; ++i)
-                    divider *= i;
-            }
+            if (n == 0 || n == m || m == 0) return 1;
+            if (n < 100 && m < 100 && _binomialCoefs[n][m] != 0) return _binomialCoefs[n][m];
 
-            return dividend/divider;
+            return _binomialCoefs[n][m] = C(n - 1, m - 1) + C(n - 1, m);
         }
 
         //Настройка графика
