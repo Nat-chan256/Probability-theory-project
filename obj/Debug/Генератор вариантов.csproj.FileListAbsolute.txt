@@ -23,3 +23,5 @@ C:\Учёбка и не учёбка\Проги\Git Repositories\Probability-the
 C:\Учёбка и не учёбка\Проги\Git Repositories\Probability-theory-project\bin\Debug\WaitWnd.dll
 C:\Учёбка и не учёбка\Проги\Git Repositories\Probability-theory-project\bin\Debug\WaitWnd.pdb
 C:\Учёбка и не учёбка\Проги\Git Repositories\Probability-theory-project\obj\Debug\Генератор вариантов.csproj.CopyComplete
+C:\Учёбка и не учёбка\Проги\Git Repositories\Probability-theory-project\obj\Debug\Генератор_вариантов.UsersConfirmForms.resources
+C:\Учёбка и не учёбка\Проги\Git Repositories\Probability-theory-project\obj\Debug\Генератор вариантов.csproj.ResolveComReference.cache

@@ -19,17 +19,19 @@ namespace Генератор_вариантов
 {
     using Word = Microsoft.Office.Interop.Word;
 
-    enum FileContent { Tasks, Answers }; //Варианты содержимого файла
+    public enum FileContent { Tasks, Answers }; //Варианты содержимого файла
 
     public partial class Form1 : Form
     {
         private Form2 source_version_;
-        TextBox way_for_versions_;
-        TextBox way_for_answers_;
-        NumericUpDown num_of_versions_;
+        private TextBox way_for_versions_;
+        private TextBox way_for_answers_;
+        private NumericUpDown num_of_versions_;
         private delegate void _workWithWordDelegate(string path, string text, decimal versionNum, FileContent fileContnet);
-        private Word.Application _app;
+        private Microsoft.Office.Interop.Word.Application _app;
         private WaitWndFun _waitWindow;
+        private bool _applyToAll;
+        private DialogResult _usersConfirmFormResult = DialogResult.None; 
 
         public Form1()
         {
@@ -37,7 +39,7 @@ namespace Генератор_вариантов
             source_version_ = new Form2(this);
 
             //Открываем ворд на фоне
-            _app = new Word.Application();
+            _app = new Microsoft.Office.Interop.Word.Application();
             _app.Visible = false;
 
             _waitWindow = new WaitWndFun();
@@ -48,6 +50,91 @@ namespace Генератор_вариантов
             this.Location = new Point(screen.WorkingArea.Width/2 - this.Width/2, screen.WorkingArea.Height/2 - this.Height);
         }
 
+//------------------------------------------------------Текстбоксы--------------------------------------------------------------
+        private void text_boxes_Click(object sender, EventArgs e)
+        {
+            TextBox text_box = (TextBox)sender;
+            if (text_box.Text.Contains("Введите путь"))
+                text_box.Text = "";
+        }
+        
+        private void text_boxes_MouseLeave(object sender, EventArgs e)
+        {
+            TextBox text_box = (TextBox)sender;
+            if (text_box.Text.Length == 0)
+            {
+                text_box.ForeColor = Color.Gray;
+                text_box.Text = "Введите путь";
+            }
+        }
+
+        private void text_boxes_TextChanged(object sender, EventArgs e)
+        {
+            TextBox text_box = (TextBox)sender;
+            if (text_box.Text == "Введите путь") return;
+            text_box.ForeColor = Color.Black;
+        }
+
+
+//------------------------------------------------------Кнопки------------------------------------------------------------------
+        private void browse1_Click(object sender, EventArgs e)
+        {
+            FolderBrowserDialog folder_browser_dialog = new FolderBrowserDialog();
+
+            if (folder_browser_dialog.ShowDialog() == DialogResult.OK)
+            {
+                way_for_versions_.Text = folder_browser_dialog.SelectedPath;
+            }
+        }
+
+        private void browse2_Click(object sender, EventArgs e)
+        {
+            FolderBrowserDialog folder_browser_dialog = new FolderBrowserDialog();
+
+            if (folder_browser_dialog.ShowDialog() == DialogResult.OK)
+            {
+                way_for_answers_.Text = folder_browser_dialog.SelectedPath;
+            }
+        }
+
+        //Большущая кнопка "Сгенерировать"
+        private void b_gen_Click(object sender, EventArgs e)
+        {
+            if (!PathsAreCorrect()) return; //Проверка введенных путей
+
+            //Генерируем тексты вариантов и ответы к ним
+            List<TestVersion> testVersions = GenerateTestVersions(num_of_versions_.Value);
+
+
+            //Сохраняем тексты вариантов
+            _waitWindow.Show();
+            foreach (TestVersion version in testVersions)
+            {
+                if (_usersConfirmFormResult == DialogResult.Cancel && _applyToAll == true) return; //Если пользователь отменил
+                                                                                                   //сохранение всех файлов
+                                                                                                   //выходим
+                _workWithWordDelegate d = new _workWithWordDelegate(SaveToWordFile);
+                IAsyncResult result = d.BeginInvoke(way_for_versions_.Text, version.VersionText, version.VersionNum, 
+                    FileContent.Tasks, null, null);
+                d.EndInvoke(result);
+            }
+           
+            //Сохраняем ответы
+            foreach (TestVersion version in testVersions)
+            {
+                if (_usersConfirmFormResult == DialogResult.Cancel && _applyToAll == true) return; //Если пользователь отменил
+                                                                                                   //сохранение всех файлов
+                                                                                                   //выходим
+                _workWithWordDelegate d = new _workWithWordDelegate(SaveToWordFile);
+                IAsyncResult result = d.BeginInvoke(way_for_versions_.Text, version.AnswersText, version.VersionNum, 
+                    FileContent.Answers, null, null);
+                d.EndInvoke(result);
+            }
+            _waitWindow.Close();
+
+            _usersConfirmFormResult = DialogResult.None;
+            _applyToAll = false;
+        }
 
         private void b_show_Click(object sender, EventArgs e)
         {
@@ -62,7 +149,7 @@ namespace Генератор_вариантов
             //Настраиваем надписи
             labels[0] = new Label();
             labels[0].Text = "Количество вариантов: ";
-            labels[0].Location = new Point(20, this.Height/2 + 10);
+            labels[0].Location = new Point(20, this.Height / 2 + 10);
             labels[0].Size = labels[0].PreferredSize;
             labels[0].AutoSize = true;
 
@@ -141,83 +228,6 @@ namespace Генератор_вариантов
             but.Enabled = false;
         }
 
-        //ТекстБоксы
-        private void text_boxes_Click(object sender, EventArgs e)
-        {
-            TextBox text_box = (TextBox)sender;
-            if (text_box.Text.Contains("Введите путь"))
-                text_box.Text = "";
-        }
-        
-        private void text_boxes_MouseLeave(object sender, EventArgs e)
-        {
-            TextBox text_box = (TextBox)sender;
-            if (text_box.Text.Length == 0)
-            {
-                text_box.ForeColor = Color.Gray;
-                text_box.Text = "Введите путь";
-            }
-        }
-
-        private void text_boxes_TextChanged(object sender, EventArgs e)
-        {
-            TextBox text_box = (TextBox)sender;
-            if (text_box.Text == "Введите путь") return;
-            text_box.ForeColor = Color.Black;
-        }
-
-
-//------------------------------------------------------Кнопки------------------------------------------------------------------
-        private void browse1_Click(object sender, EventArgs e)
-        {
-            FolderBrowserDialog folder_browser_dialog = new FolderBrowserDialog();
-
-            if (folder_browser_dialog.ShowDialog() == DialogResult.OK)
-            {
-                way_for_versions_.Text = folder_browser_dialog.SelectedPath;
-            }
-        }
-
-        private void browse2_Click(object sender, EventArgs e)
-        {
-            FolderBrowserDialog folder_browser_dialog = new FolderBrowserDialog();
-
-            if (folder_browser_dialog.ShowDialog() == DialogResult.OK)
-            {
-                way_for_answers_.Text = folder_browser_dialog.SelectedPath;
-            }
-        }
-
-        //Большущая кнопка "Сгенерировать"
-        private void b_gen_Click(object sender, EventArgs e)
-        {
-            if (!PathsAreCorrect()) return; //Проверка введенных путей
-
-            //Генерируем тексты вариантов и ответы к ним
-            List<TestVersion> testVersions = GenerateTestVersions(num_of_versions_.Value);
-
-            //Создаем поток для отображения окна ожидания
-
-
-            //Сохраняем тексты вариантов
-            _waitWindow.Show();
-            foreach (TestVersion version in testVersions)
-            {
-                _workWithWordDelegate d = new _workWithWordDelegate(SaveToWordFile);
-                IAsyncResult result = d.BeginInvoke(way_for_versions_.Text, version.VersionText, version.VersionNum, FileContent.Tasks, null, null);
-                d.EndInvoke(result);
-            }
-           
-            //Сохраняем ответы
-            foreach (TestVersion version in testVersions)
-            {
-                _workWithWordDelegate d = new _workWithWordDelegate(SaveToWordFile);
-                IAsyncResult result = d.BeginInvoke(way_for_versions_.Text, version.AnswersText, version.VersionNum, 
-                    FileContent.Answers, null, null);
-                d.EndInvoke(result);
-            }
-            _waitWindow.Close();
-        }
 
 
         private List<TestVersion> GenerateTestVersions(decimal numOfVersions)
@@ -252,10 +262,42 @@ namespace Генератор_вариантов
                 doc.Paragraphs[i].Range.Font.Size = 14;
             }
 
+            //Генерируем название документа в зависимости от его содержимого (ответы или варианты)
+            string title;
             if (fileContent == FileContent.Answers)
-                doc.SaveAs2(path + @"\Вариант " + numOfVersion + " ответы");
+            {
+                title = path + @"\Вариант " + numOfVersion + " ответы.docx";
+            }
             else
-                doc.SaveAs2(path + @"\Вариант " + numOfVersion);
+            {
+                title = path + @"\Вариант " + numOfVersion + ".docx";
+            }
+
+            if (File.Exists(title) && _applyToAll == false) //Если файл с таким именем уже существует
+            {
+                UsersConfirmForms usersConfirm = new UsersConfirmForms(numOfVersion, fileContent); //Открываем окно, в котором 
+                                                                                                   //спрашиваем пользователя,
+                                                                                                   //что делать
+                _applyToAll = usersConfirm.ApplyToAll;
+                _usersConfirmFormResult = usersConfirm.ShowDialog();
+
+                if (_usersConfirmFormResult == DialogResult.Cancel)
+                {
+                    doc.Close();
+                    return;
+                }
+            }
+
+            if (_usersConfirmFormResult == DialogResult.No) //Если пользователь решил сохранить оба документа
+            {
+                string finalTitle = setTitle(title); //Настраиваем название файла в зависимости от того, существуют ли файлы с таким 
+                                                     //же названием
+                finalTitle = finalTitle.Remove(finalTitle.Length - 5, 5); //Убираем расширение .docx из названия файла
+                doc.SaveAs2(finalTitle);
+            }
+            else
+                doc.SaveAs2(title);
+
             doc.Close();
         }
 
@@ -280,6 +322,32 @@ namespace Генератор_вариантов
         {
             //Закрываем ворд
             _app.Quit();
+        }
+
+        //Настройка названия в зависимости от того, существуют ли файлы с таким же названием
+        private string setTitle(string primaryTitle)
+        {
+            //Возвращаем первоначальное название, если файла с таким именем не существует
+            if (!File.Exists(primaryTitle)) return primaryTitle;
+
+            string title = primaryTitle;
+            int counter = 0; //Номер файла
+            while (File.Exists(title)) //Если файл с таким названием уже существует
+            {
+                counter++; //Увеличиваем номер файлa
+                if (!title.Contains('('))
+                {
+                    title = title.Remove(title.Length - 5, 5);
+                    title += $" ({counter}).docx";
+                }
+                else
+                {
+                    string[] titleFragmentally = title.Split(new char[] { '(' }); //Отделяем название файла от его номера
+                    title = $"{titleFragmentally[0]} ({counter}).docx";
+                }
+            }
+
+            return title;
         }
     }
 }
